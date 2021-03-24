@@ -1,0 +1,102 @@
+{
+ "metadata": {
+    "schemaVersion": "1.0",
+    "importType": "LEX",
+    "importFormat": "JSON"
+  },
+  "resource": {
+    "name": "claims",
+    "version": "1",
+    "confirmationPrompt": {
+        "maxAttempts": 2,
+        "messages": [
+            {
+                "content": "Okay, here is your benefits about the {disease}.  Does this sound okay?",
+                "contentType": "PlainText"
+            }
+        ]
+    },
+    "rejectionStatement": {
+        "messages": [
+            {
+                "content": "Sorry, I can't tell you about your claim",
+                "contentType": "PlainText"
+            }
+        ]
+    },
+    "sampleUtterances": [
+        "benfits that i shall get",
+        "i need to know about my benefits",
+        "i have a query regarding my benefits",
+        "benefits from the products I bought",
+        "on my benefits from the products",
+        "i want to know more about the benefits that i can get",
+        "what are my benefits",
+        "may i know about my benefits",
+        "what benefits do i have under the policy i have",
+        "tell me about my benefits"
+    ],
+    "slots": [
+        {
+            "slotType": "AMAZON.NUMBER",
+            "name": "id",
+            "slotConstraint": "Required",
+            "valueElicitationPrompt": {
+                "maxAttempts": 2,
+                "messages": [
+                    {
+                        "content": "What is your user ID?",
+                        "contentType": "PlainText"
+                    }
+                ]
+            },
+            "priority": 1,
+            "sampleUtterances": [
+                "here you go {id}",
+                "note my id {id}",
+                "here is my userid it is {id}",
+                "no userid",
+                "i don't have a userid",
+                "i guess my userid is {id}",
+                "it's {id}",
+                "my userid is {id}",
+                "here is my userid {id}",
+                "my id is {id}"
+            ],
+            "description": "The user ID"
+        },
+        {
+            "slotType": "AMAZON.AlphaNumeric",
+            "name": "disease",
+            "slotConstraint": "Required",
+            "valueElicitationPrompt": {
+                "maxAttempts": 2,
+                "messages": [
+                    {
+                        "content": "What service do you want to know about? you can ask for coverage for a disease",
+                        "contentType": "PlainText"
+                    }
+                ]
+            },
+            "priority": 2,
+            "sampleUtterances": [
+                "i want to know my claim history about {disease}",
+                "am i covered for {disease}",
+                "my claim related information about {disease}",
+                "how much have i already claimed for {disease}",
+                "what is the maximum amount that i can claim for {disease}",
+                "coverage for {disease}",
+                "may i know about coverage for {disease}",
+                "benefits that i can get for {disease}",
+                "information about service on {disease}",
+                "tell me about how much i can claim for {disease}"
+            ],
+            "description": "Name of disease to be covered"
+        }
+    ],
+    "fulfillmentActivity": {
+        "type": "ReturnIntent"
+    },
+    "description": "Intent to ask claim"
+  } 
+}
