@@ -1,5 +1,5 @@
 """
-AWS lambda code for Chatbot
+AWS lambda code for Voicebot
 ### authors: Akash Gupta, Sandipan Dey
 """
 
@@ -14,7 +14,7 @@ from dateutil.relativedelta import relativedelta
 
 # --------------- Helpers that build all of the responses ----------------------
 
-def build_speechlet_response2(title, output, reprompt_text, should_end_session):
+def build_speechlet_response(title, output, reprompt_text, should_end_session):
     return {
         'outputSpeech': {
             'type': 'PlainText',
@@ -34,29 +34,12 @@ def build_speechlet_response2(title, output, reprompt_text, should_end_session):
         'shouldEndSession': should_end_session
     }
 
-def build_response2(session_attributes, speechlet_response):
+def build_response(session_attributes, speechlet_response):
     return {
         'version': '1.0',
         'sessionAttributes': session_attributes,
         'response': speechlet_response
     }
-
-def build_speechlet_response(title, output, reprompt_text, should_end_session):
-    return {
-        "fulfillmentState":"Fulfilled",
-        "type":"Close",    
-        'message': {
-            "contentType":"PlainText",
-            "content": output
-        }
-    }
-
-def build_response(session_attributes, speechlet_response):
-    response =  {
-        "sessionAttributes": session_attributes,
-        "dialogAction": speechlet_response
-    }
-    return response
 
 # ----- recommendation --------------------------
 def preprocess_create_product_profile():
@@ -215,15 +198,11 @@ def get_service_response(intent, session):
     print("SESSION BELOW")
     print(session)
     card_title = "Service"
-    id = int(intent['slots']['id']['value'])
     disease = intent['slots']['disease']['value']
     #with open('test.json') as json_file:
     #    cov = json.load(json_file)['disease']
-    #session_attributes = session.get('attributes', {})
-    #if 'id' in session_attributes:
-    #id = int(session_attributes['id'])
-    df = pd.read_csv('user.csv')
-    uname = df.loc[df.id == id, 'name'].values[0]
+    session_attributes = session.get('attributes', {})
+    id = int(session_attributes['id'])
     dfd = pd.read_csv('disease.csv')
     dfc = pd.read_csv('userclaim.csv')
     dfc = pd.merge(dfc, dfd, left_on='did', right_on='id').drop('id', axis=1)
@@ -234,17 +213,16 @@ def get_service_response(intent, session):
     dfup = pd.merge(dfp, dfup, left_on='id', right_on='pid').drop('id', axis=1)
     dfupc = pd.merge(dfup, dfpc, left_on='pid', right_on='pid')
     df = pd.merge(dfc, dfupc, left_on=['uid','pid', 'did','name'], right_on=['uid','pid', 'did','name'], how='outer').fillna('$0')
-    row = df.loc[(df.uid == id) & (df.name == disease.lower()),['uid', 'pname', 'amt', 'maxamt']]
+    #df 
+    row = df.loc[(df.uid == id) & (df.name == disease.lower()),['pname', 'amt', 'maxamt']]
     #print(row)
-    speech_output = 'Hi {}, '.format(uname)
+    speech_output = ''
     if len(row) > 0:
         for i in range(len(row)):
-            speech_output += 'Your coverage for {} for the policy {} is {} and you have claimed {}. '.\
-                                format(disease, row.values[i][1], row.values[i][3], row.values[i][2])
+            speech_output += 'Your coverage for {} for the policy {} is {} and you have claimed {}. '.format(disease, row.values[i][0], row.values[i][2], row.values[i][1])
     else:
         speech_output = '{} is not covered in your policy'.format(disease)
-    #else:
-    #    speech_output = 'what is you userid?'
+
     reprompt_text = "I said " + speech_output
         
     should_end_session = False
@@ -464,7 +442,7 @@ def on_intent(intent_request, session):
         return get_id_response(intent, session)
     elif intent_name == "askbenefit":
         return get_benefit_response(intent, session)
-    elif intent_name == "askservice" or intent_name == 'claims':
+    elif intent_name == "askservice":
         return get_service_response(intent, session)
     elif intent_name == "askpremium":
         return get_premium_response(intent, session)
@@ -478,7 +456,7 @@ def on_intent(intent_request, session):
         return get_info_response(intent, session)
     elif intent_name == "removeid":
         return get_unregister_response(intent, session)
-    elif intent_name == "AMAZON.HelpIntent" or intent_name == "WelcomeIntent":
+    elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
         return handle_session_end_request()
@@ -499,7 +477,7 @@ def on_session_ended(session_ended_request, session):
 
 # --------------- Main handler ------------------
 
-def lambda_handler2(event, context):
+def lambda_handler(event, context):
     """ Route the incoming request based on type (LaunchRequest, IntentRequest,
     etc.) The JSON body of the request is provided in the event parameter.
     """
@@ -524,31 +502,3 @@ def lambda_handler2(event, context):
         return on_intent(event['request'], event['session'])
     elif event['request']['type'] == "SessionEndedRequest":
         return on_session_ended(event['request'], event['session'])
-
-def transform_inputs(event, context):
-    intent = {
-        'name': event["currentIntent"]["name"],
-        'slots': {}
-    }
-    session = {}
-    #print('here', event["currentIntent"]['slots'])
-    for k, v in event["currentIntent"]['slots'].items():
-        intent['slots'][k] = {'name':k, 'value':v}
-    session['attributes'] = event["currentIntent"].get("sessionAttributes", {})
-    #print(intent, session)
-    return ({'intent':intent}, session)
-
-def lambda_handler(event, context):
-    """ Route the incoming request based on type (LaunchRequest, IntentRequest,
-    etc.) The JSON body of the request is provided in the event parameter.
-    """
-    print("Incoming request...")
-
-    """
-    Uncomment this if statement and populate with your skill's application ID to
-    prevent someone else from configuring a skill that sends requests to this
-    function.
-    """
-    intent, session = transform_inputs(event, context)
-    return on_intent(intent, session)
-    
