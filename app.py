@@ -2,7 +2,7 @@
 """
 Created on Sun Mar  7 09:21:48 2021
 
-@author: Akash Gupta
+@author: Akash Gupta, Sandipan Dey
 """
 
 import os, sys
@@ -29,9 +29,10 @@ def results():
     result = req.get('queryResult')
     parameters = result.get('parameters')
     intent = result.get('intent')['displayName']
-    print(session)
+    # print(session)
     user_id = parameters['user_id'] if "user_id" in parameters else session['user_id']
-    if not 'user_id' in session:
+    # if not 'user_id' in session:
+    if 'user_id' in parameters:
         session['user_id'] = user_id
 
     print(intent)
@@ -62,7 +63,7 @@ def user_response(uid):
     user_df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/user.csv")
     row = user_df.loc[user_df.id == int(uid), 'name']
     if len(row) != 0:
-        fulfillmentText = 'Welcome {}! How may I help you today? You can querry about your premiums or claims or you can also ask me about product recommendations!'.format(row.values[0])
+        fulfillmentText = 'Welcome {}! How may I help you today? You can querry about your premiums, claims or I can help you choose some new products by my amazing recommendations engine! What would you like to know?'.format(row.values[0])
     else :
         fulfillmentText = 'Your ID is not there in our database! Please re-enter your ID.'
         
@@ -73,6 +74,8 @@ def user_response(uid):
 
 def get_service_response(user_id,disease):
     
+    user_df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/user.csv")
+    user_name = user_df.loc[user_df.id == int(user_id), 'name'].values[0]
     dfd = pd.read_csv('C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/disease.csv')
     dfc = pd.read_csv('C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/userclaim.csv')
     dfc = pd.merge(dfc, dfd, left_on='did', right_on='id').drop('id', axis=1)
@@ -81,20 +84,20 @@ def get_service_response(user_id,disease):
     dfup = pd.read_csv('C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/userprod.csv')
     dfupc = pd.merge(dfup, dfpc, left_on='pid', right_on='pid')
     df = pd.merge(dfc, dfupc, left_on=['uid','pid','did','name'], right_on=['uid','pid', 'did','name'], how='outer').fillna('$0')
-    row = df.loc[(df.uid == id) & (df.name == disease.lower()),['pid', 'amt', 'maxamt']]
+    row = df.loc[(df.uid == user_id) & (df.name == disease.lower()),['pid', 'amt', 'maxamt']]
     # print(row)
     fulfillmentText = ''
     if len(row) > 0:
         for i in range(len(row)):
             fulfillmentText += 'Your coverage for {} for the product {} is {} and you have claimed {} of {}. '.format(disease, row.values[i][0], row.values[i][2], row.values[i][1], row.values[i][2])
     else:
-        fulfillmentText = '{} is not covered in your policy'.format(disease)
+        fulfillmentText = 'Dear {}! Sorry but {} is not covered in your policy'.format(user_name,disease)
 
     return {
     "fulfillmentText": fulfillmentText
     }
 
-#Premium helper function for both ask_premium and alert_premium   
+#Premium helper function for both ask_premium & alert_premium   
 def get_premium_info(uid, pid):
 
     user_df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/user.csv")
@@ -175,10 +178,12 @@ def get_cbf_recommendation(pid): # in case of existing user feturn top 5 recomme
     return dfp.loc[dfp.id.isin(pids), 'pname'].values.tolist()
 
 def get_recommend_response(uid):
+    user_df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/user.csv")
+    user_name = user_df.loc[user_df.id == int(uid), 'name'].values[0]
     df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/userprod.csv")
     pid = random.choice(df.loc[(df.uid == uid), 'pid'].tolist())
     pnames = get_cbf_recommendation(pid)
-    fulfillmentText = 'Top 2 products recommended for you are the following: {} .'.format(', '.join(map(str, pnames)))
+    fulfillmentText = 'Sure {}!'.format(user_name)+ ' Top most products recommended for you are : {} .'.format(', '.join(map(str, pnames)))
     return {
     "fulfillmentText": fulfillmentText
     }
