@@ -35,9 +35,6 @@ def results():
     if 'user_id' in parameters:
         session['user_id'] = user_id
 
-    print(intent)
-    print(parameters)
-    print(user_id)
     if intent == 'userid':
         return user_response(user_id)
     if intent == 'askpremium':
