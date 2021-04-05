@@ -63,9 +63,9 @@ def user_response(uid):
     user_df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/user.csv")
     row = user_df.loc[user_df.id == int(uid), 'name']
     if len(row) != 0:
-        fulfillmentText = 'Welcome {}! How may I help you today? You can querry about your premiums, claims or I can help you choose some new products by my amazing recommendations engine! What would you like to know?'.format(row.values[0])
+        fulfillmentText = 'Hey {}! How are you?'.format(row.values[0])
     else :
-        fulfillmentText = 'Your ID is not there in our database! Please re-enter your ID.'
+        fulfillmentText = 'Couldnt find your ID. Please check & enter again.'
         
     return {
         "fulfillmentText": fulfillmentText
@@ -89,9 +89,9 @@ def get_service_response(user_id,disease):
     fulfillmentText = ''
     if len(row) > 0:
         for i in range(len(row)):
-            fulfillmentText += 'Your coverage for {} for the product {} is {} and you have claimed {} of {}. '.format(disease, row.values[i][0], row.values[i][2], row.values[i][1], row.values[i][2])
+            fulfillmentText += 'Your coverage for {} under Policy ID {}\nTotal claims= {}\nAlreday claimed = {}. \n'.format(disease, row.values[i][0], row.values[i][2], row.values[i][1])
     else:
-        fulfillmentText = 'Dear {}! Sorry but {} is not covered in your policy'.format(user_name,disease)
+        fulfillmentText = '{}! Sorry but {} is not covered in your policy'.format(user_name,disease)
 
     return {
     "fulfillmentText": fulfillmentText
@@ -126,16 +126,16 @@ def ask_premium_response(uid,pid):
     real_paid = int((today_date - start_date).days/365)
     
     if pr_once == 'yes' and npr_paid == 0:
-        fulfillmentText = '{}! '.format(user_name) + 'your total premium amount is {} '.format(prem_amt) + 'You have not paid it yet. Please Pay it ASAP'
+        fulfillmentText = 'Dear {}!'.format(user_name) + '\ntotal premium amount = {}!\nNot paid yet. Please Pay it ASAP'.format(prem_amt)
     elif pr_once == 'yes' and npr_paid == 1 :
-        fulfillmentText = '{}! '.format(user_name) + 'your total premium amount was {}! Payment is done.Thanks!.'.format(prem_amt)
+        fulfillmentText = 'Dear {}!'.format(user_name) + '\ntotal premium amount = {}!\nPayment is done.Thanks!.'.format(prem_amt)
         
     elif pr_once == 'no':
         due_date = start_date + relativedelta(years = npr_paid)
         if npr_paid < real_paid:
-            fulfillmentText = '{}! '.format(user_name) + 'your total premium amount is {} and you have paid only {} yearly premiums! '.format(prem_amt, npr_paid) + "Please pay the remaining {} ASAP".format(real_paid-npr_paid)
+            fulfillmentText = 'Dear {}!'.format(user_name) + '\ntotal premium amount = {}!'.format(prem_amt) + "\nPaid premiums = {}".format(npr_paid)+ "\nRemaining = {}\nPlease pay ASAP".format(real_paid-npr_paid)
         elif npr_paid == real_paid:
-            fulfillmentText = '{}! your total premium amount is {}! '.format(user_name,prem_amt)  +  "you must pay it before {} ".format(due_date.strftime("%d")) + '{},'.format(due_date.strftime("%B")) + '{}'.format(due_date.strftime("%Y"))
+            fulfillmentText = 'Dear {}!'.format(user_name) + '\ntotal premium amount = {}!'.format(prem_amt)  +  "\nYou must pay it before {} ".format(due_date.strftime("%d")) + '{},'.format(due_date.strftime("%B")) + '{}'.format(due_date.strftime("%Y"))
     else:
         fulfillmentText = results().result.fulfillmentText 
     return {
@@ -183,7 +183,7 @@ def get_recommend_response(uid):
     df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/userprod.csv")
     pid = random.choice(df.loc[(df.uid == uid), 'pid'].tolist())
     pnames = get_cbf_recommendation(pid)
-    fulfillmentText = 'Sure {}!'.format(user_name)+ ' Top most products recommended for you are : {} .'.format(', '.join(map(str, pnames)))
+    fulfillmentText = '{},'.format(user_name)+ ' Top most recommended Policies for you are:\n{} .'.format(', '.join(map(str, pnames)))
     return {
     "fulfillmentText": fulfillmentText
     }
@@ -198,4 +198,6 @@ def get_a_random_recommendation(): # in case of new user
 if __name__ == '__main__':
     app.run(debug = True, port = 8080)
     
+    
+
     
