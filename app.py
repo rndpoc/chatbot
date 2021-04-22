@@ -2,7 +2,7 @@
 """
 Created on Sun Mar  7 09:21:48 2021
 
-@author: Akash Gupta, Sandipan Dey
+@author: Akash Gupta
 """
 
 import os, sys
@@ -29,12 +29,12 @@ def results():
     result = req.get('queryResult')
     parameters = result.get('parameters')
     intent = result.get('intent')['displayName']
-    # print(session)
     user_id = parameters['user_id'] if "user_id" in parameters else session['user_id']
-    # if not 'user_id' in session:
     if 'user_id' in parameters:
         session['user_id'] = user_id
 
+    print(intent)
+    print(user_id)
     if intent == 'userid':
         return user_response(user_id)
     if intent == 'askpremium':
@@ -45,6 +45,9 @@ def results():
         return get_service_response(user_id,disease)
     if intent == 'askrecommendation':
         return get_recommend_response(user_id)
+    
+    # if intent == 'showcard':
+    #     return show_card(user_id)
 
 
 # create a route for webhook
@@ -86,7 +89,7 @@ def get_service_response(user_id,disease):
     fulfillmentText = ''
     if len(row) > 0:
         for i in range(len(row)):
-            fulfillmentText += 'Your coverage for {} under Policy ID {}\nTotal claims= {}\nAlreday claimed = {}. \n'.format(disease, row.values[i][0], row.values[i][2], row.values[i][1])
+            fulfillmentText += 'Your coverage for {} under Policy ID {} is {} and you have alreday claimed {}. \n'.format(disease, row.values[i][0], row.values[i][2], row.values[i][1])
     else:
         fulfillmentText = '{}! Sorry but {} is not covered in your policy'.format(user_name,disease)
 
@@ -123,16 +126,16 @@ def ask_premium_response(uid,pid):
     real_paid = int((today_date - start_date).days/365)
     
     if pr_once == 'yes' and npr_paid == 0:
-        fulfillmentText = 'Dear {}!'.format(user_name) + '\ntotal premium amount = {}!\nNot paid yet. Please Pay it ASAP'.format(prem_amt)
+        fulfillmentText = 'Alright {},'.format(user_name) + '\nyour total premium amount is {}!\nPlease Pay it ASAP'.format(prem_amt)
     elif pr_once == 'yes' and npr_paid == 1 :
-        fulfillmentText = 'Dear {}!'.format(user_name) + '\ntotal premium amount = {}!\nPayment is done.Thanks!.'.format(prem_amt)
+        fulfillmentText = 'Alright {},'.format(user_name) + '\ntotal premium amount is {}!\nPayment is done.Thanks!.'.format(prem_amt)
         
     elif pr_once == 'no':
         due_date = start_date + relativedelta(years = npr_paid)
         if npr_paid < real_paid:
-            fulfillmentText = 'Dear {}!'.format(user_name) + '\ntotal premium amount = {}!'.format(prem_amt) + "\nPaid premiums = {}".format(npr_paid)+ "\nRemaining = {}\nPlease pay ASAP".format(real_paid-npr_paid)
+            fulfillmentText = 'Alright {},'.format(user_name) + '\nYour total premium amount is {}!'.format(prem_amt) + " and you have paid {} out of {} yearly Premiums".format(npr_paid, real_paid)
         elif npr_paid == real_paid:
-            fulfillmentText = 'Dear {}!'.format(user_name) + '\ntotal premium amount = {}!'.format(prem_amt)  +  "\nYou must pay it before {} ".format(due_date.strftime("%d")) + '{},'.format(due_date.strftime("%B")) + '{}'.format(due_date.strftime("%Y"))
+            fulfillmentText = 'Alright {},'.format(user_name) + '\ntotal premium amount = {}!'.format(prem_amt)  +  "\nYou must pay it before {} ".format(due_date.strftime("%d")) + '{},'.format(due_date.strftime("%B")) + '{}'.format(due_date.strftime("%Y"))
     else:
         fulfillmentText = results().result.fulfillmentText 
     return {
@@ -174,27 +177,67 @@ def get_cbf_recommendation(pid): # in case of existing user feturn top 5 recomme
     pids = df[df.Product == pid].values.tolist()[0][2:]
     return dfp.loc[dfp.id.isin(pids), 'pname'].values.tolist()
 
+# def get_recommend_response(uid):
+#     user_df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/user.csv")
+#     user_name = user_df.loc[user_df.id == int(uid), 'name'].values[0]
+#     df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/userprod.csv")
+#     pid = random.choice(df.loc[(df.uid == uid), 'pid'].tolist())
+#     pnames = get_cbf_recommendation(pid)
+#     fulfillmentText = '{} '.format(user_name)+ 'you must buy policies like {} .'.format(', '.join(map(str, pnames)))
+#     return {
+#     "fulfillmentText": fulfillmentText
+#     }
+
+def get_a_random_recommendation(): # in case of new user
+    df =  pd.read_csv('C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/prod.csv')
+    pname = random.choice(df.pname.tolist())
+    fulfillmentText = 'Top products for you are {}.'.format(pname)
+    return {
+        "fulfillmentText": fulfillmentText
+        }
+
 def get_recommend_response(uid):
     user_df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/user.csv")
     user_name = user_df.loc[user_df.id == int(uid), 'name'].values[0]
     df = pd.read_csv("C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/userprod.csv")
     pid = random.choice(df.loc[(df.uid == uid), 'pid'].tolist())
-    pnames = get_cbf_recommendation(pid)
-    fulfillmentText = '{},'.format(user_name)+ ' Top most recommended Policies for you are:\n{} .'.format(', '.join(map(str, pnames)))
+    pname = get_cbf_recommendation(pid)
+    print(pname)
+    url1 = "https://image.freepik.com/free-vector/flat-hand-drawn-patient-taking-medical-examination_52683-57829.jpg"
+    url2 = "https://www.acko.com/wp-content/uploads/2019/05/7-Reasons-why-medical-test-is-important-while-buying-a-health-insurance-policy-1024x683.jpg"
+    
+    fulfillmentMessages = [
+      {
+        "card": {
+          "title":"{}".format(pname[0]) ,
+          "imageUri": url1,
+          "buttons": [
+            {
+              "text": "Buy"
+            }
+          ]
+        },
+        "platform": "FACEBOOK"
+      },
+      {
+        "card": {
+          "title": "{}".format(pname[1]),
+          "imageUri": url2,
+          "buttons": [
+            {
+              "text": "Buy"
+            }
+          ]
+        },
+        "platform": "FACEBOOK"
+      },
+    ]
+        
     return {
-    "fulfillmentText": fulfillmentText
-    }
-
-def get_a_random_recommendation(): # in case of new user
-    df =  pd.read_csv('C:/Users/aksbr/Desktop/TCS/Officework/Insurance messenger/prod.csv')
-    pname = random.choice(df.pname.tolist())
-    fulfillmentText = 'You can buy the product {}.'.format(pname)
-    return {
-        "fulfillmentText": fulfillmentText
+    "fulfillmentMessages": fulfillmentMessages
         }
+
 if __name__ == '__main__':
     app.run(debug = True, port = 8080)
     
-    
-
     
